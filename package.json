@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "bluebird": "^3.4.6",
-    "dot-env": "0.0.1",
     "dotenv": "^2.0.0",
     "lodash": "^4.17.1"
   },
