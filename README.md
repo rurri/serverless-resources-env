@@ -1,4 +1,7 @@
 [![Build Status](https://travis-ci.org/rurri/serverless-resources-env.svg?branch=master)](https://travis-ci.org/rurri/serverless-resources-env)
+[![Coverage Status](https://coveralls.io/repos/github/rurri/serverless-resources-env/badge.svg?branch=master)](https://coveralls.io/github/rurri/serverless-resources-env?branch=master)
+[![bitHound Overall Score](https://www.bithound.io/github/rurri/serverless-resources-env/badges/score.svg)](https://www.bithound.io/github/rurri/serverless-resources-env)
+
 
 A serverless framework plugin so that your functions know how to use resources created by cloudformation.
 
