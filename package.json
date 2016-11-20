@@ -1,0 +1,29 @@
+{
+  "name": "serverless-resources-env",
+  "version": "0.1.0",
+  "description": "Serverlss framework plugin, which after a deploy, fetches cloudformation resource identifiers and sets them on AWS lambdas, and creates local .<state>-env file",
+  "main": "index.js",
+  "scripts": {
+    "test": "istanbul cover node_modules/.bin/_mocha test/plugin-test.js",
+    "lint": "eslint .eslintrc.js *.js --ignore-pattern '!.eslintrc.js'"
+  },
+  "author": "Jason Chambers",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.4.6",
+    "lodash": "^4.17.1"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "circular-json": "^0.3.1",
+    "eslint": "^3.10.1",
+    "eslint-config-airbnb": "^13.0.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^2.2.3",
+    "eslint-plugin-react": "^6.7.1",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.1.2",
+    "properties-parser": "^0.3.1",
+    "sinon": "^1.17.6"
+  }
+}
