@@ -42,7 +42,6 @@ class ServerlessResourcesEnv {
    */
   afterDeploy() {
     const stackName = this.getStackName();
-    console.log(require('circular-json').stringify(this.serverless));
 
     // First fetch all of our Resources from AWS by doing a network call
     return this.fetchCFResources().then((resourceResult) => {

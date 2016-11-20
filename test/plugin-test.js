@@ -34,7 +34,7 @@ describe('serverless-fetch-stack-resource', () => {
   describe('constructor', () => {
     it('should setup to listen for hooks', () => {
       const instance = new ServerlessFetchStackResources(serverlessStub, {});
-      expect(instance.hooks).to.have.keys('after:deploy:deploy');
+      expect(instance.hooks).to.have.keys('after:deploy:deploy','before:invoke:local:invoke');
 
       expect(instance.provider).to.equal('aws');
       expect(instance.serverless).to.equal(serverlessStub);
@@ -151,6 +151,16 @@ describe('serverless-fetch-stack-resource', () => {
       };
       return instance.updateFuctionEnv('UnitTestFunctionName', resources);
     });
+  });
+
+  describe('beforeLocalInvoke', () => {
+    it('Should call dotenv based on stage', () => {
+      const instance = new ServerlessFetchStackResources(_.extend({}, serverlessStub));
+      sinon.stub(instance, 'getEnvFileName').returns('unit-test-filename');
+      sinon.stub(instance.dotenv, 'config').returns(true);
+      instance.beforeLocalInvoke();
+      sinon.assert.calledWith(instance.dotenv.config, { path: 'unit-test-filename' });
+    })
   });
 
   describe('afterDeploy', () => {

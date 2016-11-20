@@ -1,6 +1,6 @@
 {
   "name": "serverless-resources-env",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Serverlss framework plugin, which after a deploy, fetches cloudformation resource identifiers and sets them on AWS lambdas, and creates local .<state>-env file",
   "main": "index.js",
   "scripts": {
