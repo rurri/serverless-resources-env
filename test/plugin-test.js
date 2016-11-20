@@ -34,7 +34,7 @@ describe('serverless-fetch-stack-resource', () => {
   describe('constructor', () => {
     it('should setup to listen for hooks', () => {
       const instance = new ServerlessFetchStackResources(serverlessStub, {});
-      expect(instance.hooks).to.have.keys('after:deploy:deploy','before:invoke:local:invoke');
+      expect(instance.hooks).to.have.keys('after:deploy:deploy', 'before:invoke:local:invoke');
 
       expect(instance.provider).to.equal('aws');
       expect(instance.serverless).to.equal(serverlessStub);
@@ -160,7 +160,7 @@ describe('serverless-fetch-stack-resource', () => {
       sinon.stub(instance.dotenv, 'config').returns(true);
       instance.beforeLocalInvoke();
       sinon.assert.calledWith(instance.dotenv.config, { path: 'unit-test-filename' });
-    })
+    });
   });
 
   describe('afterDeploy', () => {
