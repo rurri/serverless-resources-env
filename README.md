@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/rurri/serverless-resources-env.svg?branch=master)](https://travis-ci.org/rurri/serverless-resources-env)
+
 A serverless framework plugin so that your functions know how to use resources created by cloudformation.
 
 This plugin will set environment variables on your functions within lambda using the new [Lambda environment variable support](https://aws.amazon.com/about-aws/whats-new/2016/11/aws-lambda-supports-environment-variables/).
