@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "istanbul cover node_modules/.bin/_mocha test/plugin-test.js",
-    "lint": "eslint .eslintrc.js *.js --ignore-pattern '!.eslintrc.js'"
+    "lint": "eslint .eslintrc.js **/*.js *.js --ignore-pattern '!.eslintrc.js'"
   },
   "author": "Jason Chambers",
   "license": "ISC",
@@ -24,8 +24,6 @@
     "eslint": "^3.10.1",
     "eslint-config-airbnb": "^13.0.0",
     "eslint-plugin-import": "^2.2.0",
-    "eslint-plugin-jsx-a11y": "^2.2.3",
-    "eslint-plugin-react": "^6.7.1",
     "istanbul": "^0.4.5",
     "mocha": "^3.1.2",
     "properties-parser": "^0.3.1",

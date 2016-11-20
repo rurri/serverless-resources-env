@@ -1,4 +1,4 @@
-"use strict"
+'use strict';
 
 const expect = require('chai').expect;
 const sinon = require('sinon');
@@ -9,7 +9,7 @@ const parse = require('properties-parser').parse;
 
 const serverlessStub = {
   config: {
-    servicePath: '.'
+    servicePath: '.',
   },
   service: {
     service: 'unit-test-service',
@@ -17,7 +17,7 @@ const serverlessStub = {
     functions: {
       function1: {},
       function2: {},
-    }
+    },
   },
   cli: {
     log: sinon.stub(),
@@ -25,77 +25,73 @@ const serverlessStub = {
   getProvider: () => ({
     sdk: {
       CloudFormation: Object,
-      Lambda: Object
-    }
+      Lambda: Object,
+    },
   }),
 };
 
-describe('serverless-fetch-stack-resource', function () {
-
-  describe('constructor', function () {
-    it('should setup to listen for hooks', function () {
-
+describe('serverless-fetch-stack-resource', () => {
+  describe('constructor', () => {
+    it('should setup to listen for hooks', () => {
       const instance = new ServerlessFetchStackResources(serverlessStub, {});
-      expect(instance.hooks).to.have.keys(
-          'after:deploy:deploy'
-      );
+      expect(instance.hooks).to.have.keys('after:deploy:deploy');
 
       expect(instance.provider).to.equal('aws');
       expect(instance.serverless).to.equal(serverlessStub);
     });
   });
 
-  describe('getStage', function () {
-    it('uses dev if no options set', function () {
+  describe('getStage', () => {
+    it('uses dev if no options set', () => {
       const instance = new ServerlessFetchStackResources(
           serverlessStub, {});
       expect(instance.getStage()).to.equal('dev');
     });
 
-    it('uses stage of option if set', function () {
+    it('uses stage of option if set', () => {
       const instance = new ServerlessFetchStackResources(
           serverlessStub, { stage: 'from_option' });
       expect(instance.getStage()).to.equal('from_option');
     });
 
-    it('uses stage of config if set', function () {
+    it('uses stage of config if set', () => {
       const instance = new ServerlessFetchStackResources(
           _.extend({}, serverlessStub, {
             config: { stage: 'from_config' },
-            service: { provider: {} }
+            service: { provider: {} },
           }), {});
       expect(instance.getStage()).to.equal('from_config');
     });
 
-    it('uses stage of config if set', function () {
+    it('uses stage of config if set', () => {
       const instance = new ServerlessFetchStackResources(
           _.extend({}, serverlessStub, { service: { provider: { stage: 'from_provider' } } }), {});
       expect(instance.getStage()).to.equal('from_provider');
     });
 
-    it('options will preempt other stages set', function () {
+    it('options will preempt other stages set', () => {
       const instance = new ServerlessFetchStackResources(
           _.extend({}, serverlessStub, {
             config: { stage: 'from_config' },
-            service: { provider: { stage: 'from_provider' } }
+            service: { provider: { stage: 'from_provider' } },
           }), { stage: 'from_option' });
       expect(instance.getStage()).to.equal('from_option');
     });
   });
 
-  describe('getStackName', function () {
-    it('simple combination of service and stage', function () {
+  describe('getStackName', () => {
+    it('simple combination of service and stage', () => {
       const instance = new ServerlessFetchStackResources(
           _.extend({}, serverlessStub, {
             config: {},
-            service: { service: 'a_service', provider: {} }
+            service: { service: 'a_service', provider: {} },
           }), { stage: 'from_option' });
       expect(instance.getStackName()).to.equal('a_service-from_option');
     });
   });
 
-  describe('fetchCFResources', function () {
-    it('Will use sdk to fetch resource informaiton from AWS', function() {
+  describe('fetchCFResources', () => {
+    it('Will use sdk to fetch resource informaiton from AWS', () => {
       const instance = new ServerlessFetchStackResources(_.extend({}, serverlessStub));
 
       const resources = [
@@ -107,32 +103,32 @@ describe('serverless-fetch-stack-resource', function () {
           (params, callback) => {
             callback(null, {
               StackResources: resources,
-            })
+            });
           };
 
       return instance.fetchCFResources().then((result) => {
         expect(result.StackResources).to.deep.equal(resources);
         return true;
-      })
-    })
+      });
+    });
   });
 
-  describe('createCFFile', function() {
-    it('Will create a file with the given set of resrouces with default filename', function() {
-      const resources = { a: '1', b: '2', c: '3'};
+  describe('createCFFile', () => {
+    it('Will create a file with the given set of resrouces with default filename', () => {
+      const resources = { a: '1', b: '2', c: '3' };
       const instance = new ServerlessFetchStackResources(_.extend({}, serverlessStub));
-      instance.fs.writeFile = function(fileName, data) {
+      instance.fs.writeFile = (fileName, data) => {
         expect(parse(data)).to.deep.equal(resources);
         expect(fileName).to.equal('./.dev-env');
       };
       instance.createCFFile(resources);
     });
 
-    it('Will use config filename if it exists', function() {
-      const resources = { a: '1', b: '2', c: '3'};
+    it('Will use config filename if it exists', () => {
+      const resources = { a: '1', b: '2', c: '3' };
       const instance = new ServerlessFetchStackResources(_.extend({}, serverlessStub));
-      instance.serverless.service.custom = { "resource-output-file": 'customName' };
-      instance.fs.writeFile = function(fileName, data) {
+      instance.serverless.service.custom = { 'resource-output-file': 'customName' };
+      instance.fs.writeFile = (fileName, data) => {
         expect(parse(data)).to.deep.equal(resources);
         expect(fileName).to.equal('./customName');
       };
@@ -140,11 +136,11 @@ describe('serverless-fetch-stack-resource', function () {
     });
   });
 
-  describe('updateFunctionEnv', function() {
-    it('Uses aws sdk to update a function\'s env settings', function() {
-      const resources = { CF_a: '1', CF_b: '2', CF_c: '3'};
+  describe('updateFunctionEnv', () => {
+    it('Uses aws sdk to update a function\'s env settings', () => {
+      const resources = { CF_a: '1', CF_b: '2', CF_c: '3' };
       const instance = new ServerlessFetchStackResources(_.extend({}, serverlessStub));
-      instance.lambda.updateFunctionConfiguration = function(params, callback) {
+      instance.lambda.updateFunctionConfiguration = (params, callback) => {
         expect(params).to.deep.equal({
           FunctionName: 'UnitTestFunctionName',
           Environment: {
@@ -157,8 +153,8 @@ describe('serverless-fetch-stack-resource', function () {
     });
   });
 
-  describe('afterDeploy', function() {
-    it('Calls updateFunction for each function', function() {
+  describe('afterDeploy', () => {
+    it('Calls updateFunction for each function', () => {
       const instance = new ServerlessFetchStackResources(_.extend({}, serverlessStub));
       const resources = [
         { LogicalResourceId: 'a', PhysicalResourceId: '1' },
@@ -170,7 +166,7 @@ describe('serverless-fetch-stack-resource', function () {
         CF_b: '2',
         CF_c: '3',
       };
-      sinon.stub(instance, 'fetchCFResources').returns(Promise.resolve({ StackResources: resources}));
+      sinon.stub(instance, 'fetchCFResources').returns(Promise.resolve({ StackResources: resources }));
       sinon.stub(instance, 'updateFuctionEnv').returns(Promise.resolve(true));
       sinon.stub(instance, 'createCFFile').returns(Promise.resolve(true));
       return instance.afterDeploy().then(() => {
@@ -179,8 +175,6 @@ describe('serverless-fetch-stack-resource', function () {
         sinon.assert.calledWith(instance.updateFuctionEnv, 'unit-test-service-dev-function2', mappedResources);
         return true;
       });
-
     });
-
   });
 });
