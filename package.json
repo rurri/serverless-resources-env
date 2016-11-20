@@ -9,6 +9,10 @@
   },
   "author": "Jason Chambers",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rurri/serverless-resources-env.git"
+  },
   "dependencies": {
     "bluebird": "^3.4.6",
     "lodash": "^4.17.1"
