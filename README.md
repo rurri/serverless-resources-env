@@ -7,26 +7,18 @@ A serverless framework plugin so that your functions know how to use resources c
 
 This plugin will set environment variables on your functions within lambda using the new [Lambda environment variable support](https://aws.amazon.com/about-aws/whats-new/2016/11/aws-lambda-supports-environment-variables/).
 
-It will also create a local env file for optional use in reading in environment variables for a specific stage while running functionals locally. These are by default stored in a file named: `.dev-env` where `dev` is replaced by the appropriate stage name.
+It will also create a local env file for use in reading in environment variables for a specific stage while running functionals locally. These are by default stored in a file named: `.dev-env` where `dev` is replaced by the appropriate stage name.  These environment variables are set automatically by the plugin when running `serverless invoke local -f ...`.
+
+In short, whether you are running your function as a lambda, or  locally on your machine. Each resource that was part of your CloudFormation template will be available as an environment variable prefixed with `CF_`.
 
 ## Why?
 
 You have a CloudFormation template all set, and you are writing your functions. Now you are ready to use the
 resources created as part of your CF template. Well, you need to know about them!
 
-## Example of Lambda Usage:
+## Example:
 
 ```
-const sqs_arn = process.env.CF_mySQS;
-const my_dynamo_table_name = process.env.CF_myTable;
-```
-
-## Example of Local Usage:
-You can optionally use the generated .dev-env file to load in variables on local host as well.
-
-```
-const require('dotenv).config({silent: true, path:'.dev-env'});
-
 const sqs_arn = process.env.CF_mySQS;
 const my_dynamo_table_name = process.env.CF_myTable;
 ```
@@ -36,7 +28,7 @@ This plugin attaches to the deploy post-deploy hook. After the stack is deployed
 
 After deployment, this plugin, will fetch all the CF resources for the current stack (stage i.e. 'dev'), using the AWS SDK and then set the physical id's of each resource as an environment variable prefixed with `CF_`.
 
-It will also create a file with these values in a .properties file format need `.dev-env`. This can be pulled in by the [dotenv package](https://www.npmjs.com/package/dotenv) or in any way you chose. Each stage will get its own file such as `.stage-env`, such that local code can chose which stage's resources it wants to use.
+It will also create a file with these values in a .properties file format need `.dev-env`. These are then pulled in during a local invocation (`serverless invoke local -f...`) Each stage will get its own file such as `.stage-env`, such that local code will automatically select the correct CF information based on which stage is set.
 
 This means no code changes, or config changes no matter how many regions, and stages you deploy to.
 
@@ -82,6 +74,7 @@ custom:
   resource-output-file: .alt-resource-file
 ```
 
-## PreRequisite
+## PreRequisites
 
 Only works with the aws provider
+npm package `aws-sdk` must be >= `2.7.5`

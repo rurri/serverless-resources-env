@@ -3,6 +3,7 @@
 const Promise = require('bluebird');
 const _ = require('lodash');
 const fs = require('fs');
+const dotenv = require('dotenv');
 
 class ServerlessResourcesEnv {
 
@@ -20,6 +21,7 @@ class ServerlessResourcesEnv {
     // only a function deploy will not modify any CF resources
     this.hooks = {
       'after:deploy:deploy': this.afterDeploy.bind(this),
+      'before:invoke:local:invoke': this.beforeLocalInvoke.bind(this),
     };
 
     // Stash the context away for later
@@ -31,6 +33,7 @@ class ServerlessResourcesEnv {
     this.cloudFormation = new awsProvider.sdk.CloudFormation();
     this.lambda = new awsProvider.sdk.Lambda();
     this.fs = fs;
+    this.dotenv = dotenv;
   }
 
   /**
@@ -39,6 +42,7 @@ class ServerlessResourcesEnv {
    */
   afterDeploy() {
     const stackName = this.getStackName();
+    console.log(require('circular-json').stringify(this.serverless));
 
     // First fetch all of our Resources from AWS by doing a network call
     return this.fetchCFResources().then((resourceResult) => {
@@ -70,6 +74,12 @@ class ServerlessResourcesEnv {
     });
   }
 
+  beforeLocalInvoke() {
+    const fileName = this.getEnvFileName();
+    this.serverless.cli.log(`[serverless-resources-env] Pulling in env variables from ${fileName}`);
+    dotenv.config({ path: fileName });
+  }
+
   /**
    * Updates the environment variables for a single function.
    * @param functionName Name of function to update
@@ -99,17 +109,21 @@ class ServerlessResourcesEnv {
     });
   }
 
+  getEnvFileName() {
+    const stage = this.getStage();
+    // Check if the filename is overridden, otherwise use /<stage>-env
+    return this.serverless.service.custom && this.serverless.service.custom['resource-output-file'] ?
+            this.serverless.service.custom['resource-output-file'] : `.${stage}-env`;
+  }
+
   /**
    * Creates a local file of all the CF resources for this stack in a .properties format
    * @param resources
    * @returns {Promise}
    */
   createCFFile(resources) {
-    const stage = this.getStage();
     // Check if the filename is overridden, otherwise use /<stage>-env
-    const fileName =
-        this.serverless.service.custom && this.serverless.service.custom['resource-output-file'] ?
-            this.serverless.service.custom['resource-output-file'] : `.${stage}-env`;
+    const fileName = this.getEnvFileName();
 
     // Log so that the user knows where this file is
     this.serverless.cli.log(`[serverless-resources-env] Writing ${_.keys(resources).length}` +
