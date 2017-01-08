@@ -62,7 +62,7 @@ class ServerlessResourcesEnv {
       // For each function, update the env files on that function.
       const updatePromises = _.map(_.keys(this.serverless.service.functions), (functionName) => {
         const awsFunctionName = `${stackName}-${functionName}`;
-        return this.updateFuctionEnv(awsFunctionName, resources);
+        return this.updateFunctionEnv(awsFunctionName, resources);
       });
       // Add the updatePromies as part of our promise list for finishing
       finishedPromises.concat(updatePromises);
@@ -89,7 +89,7 @@ class ServerlessResourcesEnv {
    * @param envVars Environment vars to set on the function
    * @returns {Promise.<String>}
    */
-  updateFuctionEnv(functionName, envVars) {
+  updateFunctionEnv(functionName, envVars) {
     this.serverless.cli.log(`[serverless-resources-env] Setting env vars for ${functionName}`);
     const params = {
       FunctionName: functionName, /* required */

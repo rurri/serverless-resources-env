@@ -180,7 +180,7 @@ describe('serverless-fetch-stack-resource', () => {
         });
         callback(null, true);
       };
-      return instance.updateFuctionEnv('UnitTestFunctionName', resources);
+      return instance.updateFunctionEnv('UnitTestFunctionName', resources);
     });
   });
 
@@ -208,12 +208,12 @@ describe('serverless-fetch-stack-resource', () => {
         CF_c: '3',
       };
       sinon.stub(instance, 'fetchCFResources').returns(Promise.resolve({ StackResources: resources }));
-      sinon.stub(instance, 'updateFuctionEnv').returns(Promise.resolve(true));
+      sinon.stub(instance, 'updateFunctionEnv').returns(Promise.resolve(true));
       sinon.stub(instance, 'createCFFile').returns(Promise.resolve(true));
       return instance.afterDeploy().then(() => {
         sinon.assert.calledOnce(instance.fetchCFResources);
-        sinon.assert.calledWith(instance.updateFuctionEnv, 'unit-test-service-dev-function1', mappedResources);
-        sinon.assert.calledWith(instance.updateFuctionEnv, 'unit-test-service-dev-function2', mappedResources);
+        sinon.assert.calledWith(instance.updateFunctionEnv, 'unit-test-service-dev-function1', mappedResources);
+        sinon.assert.calledWith(instance.updateFunctionEnv, 'unit-test-service-dev-function2', mappedResources);
         return true;
       });
     });
