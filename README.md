@@ -45,9 +45,9 @@ plugins:
   - serverless-resources-env
 ```
 
-**Important Note about aws-sdk version!**
+**Important Note about aws-sdk version For users of Serverles v1.1 and earlier!**
 
-Setting environment variables on Lambda is BRAND NEW on AWS. And you may need to upgrade the version of the package `aws-sdk` being used by the serverless framework. In the 1.1.0 serverless framework, the `aws-sdk` is pegged at version 2.6.8 in the `npm-shrinkwrap.json` of serverless. This will likely be updated at the next serverless release, but in the meantime will require a manual upgrade. 
+You may need to upgrade the version of the package `aws-sdk` being used by the serverless framework. In the 1.1.0 serverless framework, the `aws-sdk` is pegged at version 2.6.8 in the `npm-shrinkwrap.json` of serverless.
 
 If you have installed serverless locally as part of your project you can just upgrade the sdk. `npm upgrade aws-sdk`.
 
@@ -62,19 +62,14 @@ npm upgrade aws-sdk
 
 ## Common Error
 
-`Unexpected key 'Environment' found in params`. Your aws-sdk is out of date. Setting environment variables on lambdas is brand new. See the Important node above.
+`Unexpected key 'Environment' found in params`. Your aws-sdk is out of date. Setting environment variables on lambdas is new. See the Important note above.
 
 ## Config
 
-By default, the mapping is written to a .env file located at `.<stage-name>-env`. This can be modified by
+By default, the mapping is written to a .env file located at `.<region>_<stage-name>_env`. This can be modified by
 setting an option in serverless.yml.
 
 ```
 custom:
   resource-output-file: .alt-resource-file
 ```
-
-## PreRequisites
-
-Only works with the aws provider
-npm package `aws-sdk` must be >= `2.7.5`

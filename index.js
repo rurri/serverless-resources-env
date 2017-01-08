@@ -29,9 +29,13 @@ class ServerlessResourcesEnv {
     this.options = options;
 
     const awsProvider = this.serverless.getProvider('aws');
+
+    // The AWS Region is not set for us yet on the provider
+    const region = this.getRegion();
+
     // Set these on our object for easier injection by unit tests
-    this.cloudFormation = new awsProvider.sdk.CloudFormation();
-    this.lambda = new awsProvider.sdk.Lambda();
+    this.cloudFormation = new awsProvider.sdk.CloudFormation({ region });
+    this.lambda = new awsProvider.sdk.Lambda({ region });
     this.fs = fs;
     this.dotenv = dotenv;
   }
@@ -110,9 +114,10 @@ class ServerlessResourcesEnv {
 
   getEnvFileName() {
     const stage = this.getStage();
+    const region = this.getRegion();
     // Check if the filename is overridden, otherwise use /<stage>-env
     return this.serverless.service.custom && this.serverless.service.custom['resource-output-file'] ?
-            this.serverless.service.custom['resource-output-file'] : `.${stage}-env`;
+            this.serverless.service.custom['resource-output-file'] : `.${region}_${stage}_env`;
   }
 
   /**
@@ -148,6 +153,22 @@ class ServerlessResourcesEnv {
       returnValue = this.serverless.config.stage;
     } else if (this.serverless.service.provider.stage) {
       returnValue = this.serverless.service.provider.stage;
+    }
+    return returnValue;
+  }
+
+  /**
+   * Checks CLI options and settings to discover the current region that is being worked on
+   * @returns {string}
+   */
+  getRegion() {
+    let returnValue = 'us-east-1';
+    if (this.options && this.options.region) {
+      returnValue = this.options.region;
+    } else if (this.serverless.config.region) {
+      returnValue = this.serverless.config.region;
+    } else if (this.serverless.service.provider.region) {
+      returnValue = this.serverless.service.provider.region;
     }
     return returnValue;
   }

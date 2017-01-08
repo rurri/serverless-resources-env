@@ -79,6 +79,35 @@ describe('serverless-fetch-stack-resource', () => {
     });
   });
 
+  describe('getRegion', () => {
+    it('uses us-east-1 if no options set', () => {
+      const instance = new ServerlessFetchStackResources(
+          serverlessStub, {});
+      expect(instance.getRegion()).to.equal('us-east-1');
+    });
+
+    it('uses region of option if set', () => {
+      const instance = new ServerlessFetchStackResources(
+          serverlessStub, { region: 'from_option' });
+      expect(instance.getRegion()).to.equal('from_option');
+    });
+
+    it('uses region of config if set', () => {
+      const instance = new ServerlessFetchStackResources(
+          _.extend({}, serverlessStub, {
+            config: { region: 'from_config' },
+            service: { provider: {} },
+          }), {});
+      expect(instance.getRegion()).to.equal('from_config');
+    });
+
+    it('uses region of config provider if set', () => {
+      const instance = new ServerlessFetchStackResources(
+          _.extend({}, serverlessStub, { service: { provider: { region: 'from_provider' } } }), {});
+      expect(instance.getRegion()).to.equal('from_provider');
+    });
+  });
+
   describe('getStackName', () => {
     it('simple combination of service and stage', () => {
       const instance = new ServerlessFetchStackResources(
@@ -114,23 +143,25 @@ describe('serverless-fetch-stack-resource', () => {
   });
 
   describe('createCFFile', () => {
-    it('Will create a file with the given set of resrouces with default filename', () => {
+    it('Will create a file with the given set of resrouces with default filename', (done) => {
       const resources = { a: '1', b: '2', c: '3' };
       const instance = new ServerlessFetchStackResources(_.extend({}, serverlessStub));
       instance.fs.writeFile = (fileName, data) => {
         expect(parse(data)).to.deep.equal(resources);
-        expect(fileName).to.equal('./.dev-env');
+        expect(fileName).to.equal('./.us-east-1_dev_env');
+        done();
       };
       instance.createCFFile(resources);
     });
 
-    it('Will use config filename if it exists', () => {
+    it('Will use config filename if it exists', (done) => {
       const resources = { a: '1', b: '2', c: '3' };
       const instance = new ServerlessFetchStackResources(_.extend({}, serverlessStub));
       instance.serverless.service.custom = { 'resource-output-file': 'customName' };
       instance.fs.writeFile = (fileName, data) => {
         expect(parse(data)).to.deep.equal(resources);
         expect(fileName).to.equal('./customName');
+        done();
       };
       instance.createCFFile(resources);
     });
