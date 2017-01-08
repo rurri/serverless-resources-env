@@ -143,27 +143,67 @@ describe('serverless-fetch-stack-resource', () => {
   });
 
   describe('createCFFile', () => {
-    it('Will create a file with the given set of resrouces with default filename', (done) => {
+    it('Will create a file with the given set of resources with default filename', (done) => {
       const resources = { a: '1', b: '2', c: '3' };
       const instance = new ServerlessFetchStackResources(_.extend({}, serverlessStub));
+      instance.fs = _.cloneDeep(instance.fs);
       instance.fs.writeFile = (fileName, data) => {
         expect(parse(data)).to.deep.equal(resources);
-        expect(fileName).to.equal('./.us-east-1_dev_env');
+        expect(fileName).to.equal('./.serverless-resources-env/.us-east-1_dev_function1');
         done();
       };
-      instance.createCFFile(resources);
+      instance.createCFFile('function1', resources);
     });
 
     it('Will use config filename if it exists', (done) => {
       const resources = { a: '1', b: '2', c: '3' };
       const instance = new ServerlessFetchStackResources(_.extend({}, serverlessStub));
-      instance.serverless.service.custom = { 'resource-output-file': 'customName' };
+      instance.serverless.service.functions.function1.custom = { 'resource-output-file': 'customName' };
+      instance.fs = _.cloneDeep(instance.fs);
       instance.fs.writeFile = (fileName, data) => {
         expect(parse(data)).to.deep.equal(resources);
-        expect(fileName).to.equal('./customName');
+        expect(fileName).to.equal('./.serverless-resources-env/customName');
         done();
       };
-      instance.createCFFile(resources);
+      instance.createCFFile('function1', resources);
+    });
+
+    it('Will create the directory if it does not exist', (done) => {
+      const resources = { a: '1', b: '2', c: '3' };
+      const instance = new ServerlessFetchStackResources(
+          _.cloneDeep(serverlessStub));
+      instance.serverless.service.custom = { 'resource-output-dir': 'custom-dir' };
+      instance.serverless.service.functions.function1.custom = { 'resource-output-file': 'customName' };
+
+      instance.fs = _.cloneDeep(instance.fs);
+      instance.fs.mkdirSync = sinon.stub();
+      instance.fs.statSync = () => ({ isDirectory: () => true });
+      instance.fs.writeFile = (fileName, data) => {
+        expect(parse(data)).to.deep.equal(resources);
+        expect(fileName).to.equal('./custom-dir/customName');
+        sinon.assert.calledWith(instance.fs.mkdirSync, './custom-dir', 0o700);
+        done();
+      };
+      instance.createCFFile('function1', resources);
+    });
+
+    it('Will error if the directory given exists but is not a directory', (done) => {
+      const resources = { a: '1', b: '2', c: '3' };
+      const instance = new ServerlessFetchStackResources(
+          _.cloneDeep(serverlessStub));
+      instance.serverless.service.custom = { 'resource-output-dir': 'custom-dir' };
+      instance.serverless.service.functions.function1.custom = { 'resource-output-file': 'customName' };
+
+      instance.fs = _.cloneDeep(instance.fs);
+      instance.fs.mkdirSync = sinon.stub();
+      instance.fs.statSync = () => ({ isDirectory: () => false });
+      instance.fs.existsSync = () => true;
+      try {
+        instance.createCFFile('function1', resources);
+        done('Expected an exception for a non-directory filename');
+      } catch (error) {
+        done();
+      }
     });
   });
 
@@ -186,17 +226,23 @@ describe('serverless-fetch-stack-resource', () => {
 
   describe('beforeLocalInvoke', () => {
     it('Should call dotenv based on stage', () => {
-      const instance = new ServerlessFetchStackResources(_.extend({}, serverlessStub));
+      const instance = new ServerlessFetchStackResources(_.extend({}, serverlessStub), { function: 'function1' });
+
       sinon.stub(instance, 'getEnvFileName').returns('unit-test-filename');
       sinon.stub(instance.dotenv, 'config').returns(true);
       instance.beforeLocalInvoke();
-      sinon.assert.calledWith(instance.dotenv.config, { path: 'unit-test-filename' });
+      sinon.assert.calledWith(instance.dotenv.config, { path: './.serverless-resources-env/unit-test-filename' });
     });
   });
 
   describe('afterDeploy', () => {
     it('Calls updateFunction for each function', () => {
-      const instance = new ServerlessFetchStackResources(_.extend({}, serverlessStub));
+      const instance = new ServerlessFetchStackResources(_.extend({}, _.cloneDeep(serverlessStub)));
+      const resourceList = ['a', 'b', 'c'];
+      instance.serverless.service.functions.function1.custom = { 'env-resources': resourceList };
+      instance.serverless.service.functions.function2.custom = { 'env-resources': resourceList };
+      instance.serverless.service.functions.function3 = {};
+      instance.serverless.service.functions.function4 = { custom: { 'env-resources': ['unknown'] } };
       const resources = [
         { LogicalResourceId: 'a', PhysicalResourceId: '1' },
         { LogicalResourceId: 'b', PhysicalResourceId: '2' },
@@ -214,6 +260,8 @@ describe('serverless-fetch-stack-resource', () => {
         sinon.assert.calledOnce(instance.fetchCFResources);
         sinon.assert.calledWith(instance.updateFunctionEnv, 'unit-test-service-dev-function1', mappedResources);
         sinon.assert.calledWith(instance.updateFunctionEnv, 'unit-test-service-dev-function2', mappedResources);
+        sinon.assert.calledWith(instance.updateFunctionEnv, 'unit-test-service-dev-function3', {});
+        sinon.assert.calledWith(instance.updateFunctionEnv, 'unit-test-service-dev-function4', {});
         return true;
       });
     });

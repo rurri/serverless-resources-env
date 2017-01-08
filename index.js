@@ -54,23 +54,40 @@ class ServerlessResourcesEnv {
         all[`CF_${item.LogicalResourceId}`] = item.PhysicalResourceId;
         return all;
       }, {});
-      // Make an array to track all each promise related to our task
-      const finishedPromises = [];
 
-      // Create the Local CF File
-      finishedPromises.push(this.createCFFile(resources));
       // For each function, update the env files on that function.
       const updatePromises = _.map(_.keys(this.serverless.service.functions), (functionName) => {
         const awsFunctionName = `${stackName}-${functionName}`;
-        return this.updateFunctionEnv(awsFunctionName, resources);
-      });
-      // Add the updatePromies as part of our promise list for finishing
-      finishedPromises.concat(updatePromises);
+        const resourceList = _.map(
+            this.serverless.service.functions[functionName].custom &&
+            this.serverless.service.functions[functionName].custom['env-resources'],
+            resource => `CF_${resource}`);
 
-      // Print Debug information for each successful promise
-      Promise.each(updatePromises, (result) => {
-        this.serverless.cli.log(
-            `[serverless-resources-env] ENV Update for function ${result.FunctionName} successful`);
+        const thisFunctionsResources = _.pick(resources, resourceList);
+        const notFoundList = _.difference(resourceList, _.keys(thisFunctionsResources));
+
+        if (notFoundList.length > 0) {
+          this.serverless.cli.log(
+              `[serverless-resources-env] WARNING: Could not find cloud formation resources for ${functionName}.` +
+              `Could not find: ${_.join(notFoundList)}`);
+        }
+        if (_.keys(thisFunctionsResources).length === 0) {
+          this.serverless.cli.log(
+              `[serverless-resources-env] No env resources configured for ${functionName}. Clearing env vars`);
+        } else {
+          this.serverless.cli.log(
+              `[serverless-resources-env] Setting env vars for ${functionName}. ${_.join(resourceList)}`);
+        }
+        const awsUpdateResult =
+            this.updateFunctionEnv(awsFunctionName, thisFunctionsResources).then((result) => {
+              this.serverless.cli.log(
+                `[serverless-resources-env] ENV Update for function ${result.FunctionName} successful`);
+              return result;
+            });
+        return Promise.all([
+          awsUpdateResult,
+          this.createCFFile(functionName, thisFunctionsResources),
+        ]);
       });
       // Return a promise that resolves once everything is done.
       return Promise.all(updatePromises);
@@ -78,9 +95,11 @@ class ServerlessResourcesEnv {
   }
 
   beforeLocalInvoke() {
-    const fileName = this.getEnvFileName();
-    this.serverless.cli.log(`[serverless-resources-env] Pulling in env variables from ${fileName}`);
-    dotenv.config({ path: fileName });
+    const fileName = this.getEnvFileName(this.options.function);
+    const path = this.getEnvDirectory();
+    const fullPath = `${path}/${fileName}`;
+    this.serverless.cli.log(`[serverless-resources-env] Pulling in env variables from ${fullPath}`);
+    dotenv.config({ path: fullPath });
   }
 
   /**
@@ -90,7 +109,6 @@ class ServerlessResourcesEnv {
    * @returns {Promise.<String>}
    */
   updateFunctionEnv(functionName, envVars) {
-    this.serverless.cli.log(`[serverless-resources-env] Setting env vars for ${functionName}`);
     const params = {
       FunctionName: functionName, /* required */
       Environment: {
@@ -112,12 +130,19 @@ class ServerlessResourcesEnv {
     });
   }
 
-  getEnvFileName() {
+  getEnvDirectory() {
+    const customDirectory = this.serverless.service.custom && this.serverless.service.custom['resource-output-dir'];
+    const directory = customDirectory || '.serverless-resources-env';
+    return `${this.serverless.config.servicePath}/${directory}`;
+  }
+
+  getEnvFileName(functionName) {
     const stage = this.getStage();
     const region = this.getRegion();
-    // Check if the filename is overridden, otherwise use /<stage>-env
-    return this.serverless.service.custom && this.serverless.service.custom['resource-output-file'] ?
-            this.serverless.service.custom['resource-output-file'] : `.${region}_${stage}_env`;
+    const customName = this.serverless.service.functions[functionName].custom &&
+        this.serverless.service.functions[functionName].custom['resource-output-file'];
+    // Check if the filename is overridden, otherwise use .<region>_<stage>-<function>
+    return customName || `.${region}_${stage}_${functionName}`;
   }
 
   /**
@@ -125,15 +150,24 @@ class ServerlessResourcesEnv {
    * @param resources
    * @returns {Promise}
    */
-  createCFFile(resources) {
+  createCFFile(functionName, resources) {
     // Check if the filename is overridden, otherwise use /<stage>-env
-    const fileName = this.getEnvFileName();
+    const path = this.getEnvDirectory();
+    const fileName = this.getEnvFileName(functionName);
+
+    if (!this.fs.existsSync(path)) {
+      this.fs.mkdirSync(path, 0o700);
+    }
+
+    if (!this.fs.statSync(path).isDirectory()) {
+      throw new Error(`Expected ${path} to be a directory`);
+    }
 
     // Log so that the user knows where this file is
     this.serverless.cli.log(`[serverless-resources-env] Writing ${_.keys(resources).length}` +
         ` CF resources to ${fileName}`);
 
-    const fullFileName = `${this.serverless.config.servicePath}/${fileName}`;
+    const fullFileName = `${path}/${fileName}`;
     // Reduce this to a simple properties file format
     const data = _.reduce(resources, (properties, item, key) =>
         `${properties}${key}=${item}\n`, '');
