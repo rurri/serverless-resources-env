@@ -65,6 +65,10 @@ class ServerlessResourcesEnv {
 
         const thisFunctionsResources = _.pick(resources, resourceList);
         const notFoundList = _.difference(resourceList, _.keys(thisFunctionsResources));
+        const thisFunctionEnv = _.extend(
+            {},
+            thisFunctionsResources,
+            this.serverless.service.functions[functionName].environment);
 
         if (notFoundList.length > 0) {
           this.serverless.cli.log(
@@ -76,17 +80,19 @@ class ServerlessResourcesEnv {
               `[serverless-resources-env] No env resources configured for ${functionName}. Clearing env vars`);
         } else {
           this.serverless.cli.log(
-              `[serverless-resources-env] Setting env vars for ${functionName}. ${_.join(resourceList)}`);
+              `[serverless-resources-env] Setting env vars for ${functionName}. ${_.join(thisFunctionsResources)}`);
         }
+        // Send a lambda update request to
         const awsUpdateResult =
-            this.updateFunctionEnv(awsFunctionName, thisFunctionsResources).then((result) => {
+            this.updateFunctionEnv(awsFunctionName, thisFunctionEnv).then((result) => {
               this.serverless.cli.log(
                 `[serverless-resources-env] ENV Update for function ${result.FunctionName} successful`);
               return result;
             });
+        const createFileResult = this.createCFFile(functionName, thisFunctionsResources);
         return Promise.all([
           awsUpdateResult,
-          this.createCFFile(functionName, thisFunctionsResources),
+          createFileResult,
         ]);
       });
       // Return a promise that resolves once everything is done.

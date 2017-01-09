@@ -265,5 +265,34 @@ describe('serverless-fetch-stack-resource', () => {
         return true;
       });
     });
+
+    it('Includes env variables set for functions in the serverless.yml', () => {
+      const instance = new ServerlessFetchStackResources(_.extend({}, _.cloneDeep(serverlessStub)));
+      const resourceList = ['a', 'b', 'c'];
+      instance.serverless.service.functions.function1.custom = { 'env-resources': resourceList };
+      instance.serverless.service.functions.function1.environment = { custom1: 'value1' };
+
+      const resources = [
+        { LogicalResourceId: 'a', PhysicalResourceId: '1' },
+        { LogicalResourceId: 'b', PhysicalResourceId: '2' },
+        { LogicalResourceId: 'c', PhysicalResourceId: '3' },
+      ];
+      const mappedResources = {
+        CF_a: '1',
+        CF_b: '2',
+        CF_c: '3',
+      };
+      sinon.stub(instance, 'fetchCFResources').returns(Promise.resolve({ StackResources: resources }));
+      sinon.stub(instance, 'updateFunctionEnv').returns(Promise.resolve(true));
+      sinon.stub(instance, 'createCFFile').returns(Promise.resolve(true));
+      return instance.afterDeploy().then(() => {
+        sinon.assert.calledOnce(instance.fetchCFResources);
+        sinon.assert.calledWith(
+            instance.updateFunctionEnv,
+            'unit-test-service-dev-function1',
+            _.extend({}, mappedResources, { custom1: 'value1' }));
+        return true;
+      });
+    });
   });
 });
