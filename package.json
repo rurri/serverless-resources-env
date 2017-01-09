@@ -8,7 +8,7 @@
     "lint": "eslint .eslintrc.js **/*.js *.js --ignore-pattern '!.eslintrc.js'"
   },
   "author": "Jason Chambers",
-  "license": "ISC",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rurri/serverless-resources-env.git"
