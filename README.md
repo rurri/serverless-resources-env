@@ -2,29 +2,30 @@
 [![Coverage Status](https://coveralls.io/repos/github/rurri/serverless-resources-env/badge.svg?branch=master)](https://coveralls.io/github/rurri/serverless-resources-env?branch=master)
 [![bitHound Overall Score](https://www.bithound.io/github/rurri/serverless-resources-env/badges/score.svg)](https://www.bithound.io/github/rurri/serverless-resources-env)
 
-
 A serverless framework plugin so that your functions know how to use resources created by cloudformation.
-
-This plugin will set environment variables on your functions within lambda using the [Lambda environment variable support](https://aws.amazon.com/about-aws/whats-new/2016/11/aws-lambda-supports-environment-variables/).
-
-It will also create a local env file for use in reading in environment variables for a specific region-stage-function while running functions locally. These are by default stored in a directory named: `.serverless-resources-env` in files named `.<region>_<stage>_<function-name>`. Ex: `./.serverless-resources-env/.us-east-1_dev_hello`.
-These environment variables are set automatically by the plugin when running `serverless invoke local -f ...`.
 
 In short, whether you are running your function as a lambda, or  locally on your machine,
 the physical name or ARN of each resource that was part of your CloudFormation template will be available as an environment
 variable keyed to its logical name prefixed with `CF_`.
 
+For lambdas running on AWS, this plugin will set environment variables on your functions within lambda using the [Lambda environment variable support](https://aws.amazon.com/about-aws/whats-new/2016/11/aws-lambda-supports-environment-variables/).
+
+For running functions locally, it will also create a local env file for use in reading in environment variables for a specific region-stage-function while running functions locally. These are by default stored in a directory named: `.serverless-resources-env` in files named `.<region>_<stage>_<function-name>`. Ex: `./.serverless-resources-env/.us-east-1_dev_hello`.
+These environment variables are set automatically by the plugin when running `serverless invoke local -f ...`.
+
+**Breaking Changes in 0.3.0:** *See below*
+
 ## Why?
 
 You have a CloudFormation template all set, and you are writing your functions. Now you are ready to use the
 resources created as part of your CF template. Well, you need to know about them! You could deploy and then try and manage
-configuration for these resources, or you can use the module which will automatically set environmet variables mapping the
-logical resource name to the physical resource name.
+configuration for these resources, or you can use this module which will automatically set environmet variables that map the
+logical resource name to the physical resource name for resources within the CloudFormation file.
 
 ## Example:
 
-You have defined a resources in your serverless.yml called `mySQS` and `myTable`, and you want to actually use these in
-your lambda so you need their ARN or the actual table name that was created.
+You have defined resources in your serverless.yml called `mySQS` and `myTable`, and you want to actually use these in
+your function so you need their ARN or the actual table name that was created.
 
 ```
 const sqs_arn = process.env.CF_mySQS;
@@ -84,15 +85,14 @@ functions:
 
 At version 0.2.0 and before, all resources were exported to both the local .env file and to each function automatically.
 
-This caused issues with limits on the amount of env information that could be exported. As well as exposed resources
-as env variables that would not be used by functions
+This caused issues with AWS limits on the amount of information that could be exported as env variables onto lambdas deployed within AWS. This also exposed resources
+as env variables that were not needed by functions, as it was setting *all* resources, not just the ones the function needed.
 
 Starting at version 0.3.0 a list of which resources are to be exported to each function are required to be a part of the
-function definition in the .yml file.
+function definition in the .yml file, if the function needs any of these environment variables. (See current install instructions above)
 
 This also means that specific env files are needed per region / stage / function. This can potentially be a lot of files
-and therefore these files were also moved to a sub-folder. `.serverless-resources-env` by default. It is recommended that
-this directory be added to .gitignore.
+and therefore these files were also moved to a sub-folder. `.serverless-resources-env` by default.
 
 ## Common Errors
 
