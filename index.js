@@ -68,6 +68,7 @@ class ServerlessResourcesEnv {
         const thisFunctionEnv = _.extend(
             {},
             thisFunctionsResources,
+            this.serverless.service.provider.environment || {},
             this.serverless.service.functions[functionName].environment);
 
         if (notFoundList.length > 0) {
