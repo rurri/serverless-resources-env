@@ -13,7 +13,11 @@ const serverlessStub = {
   },
   service: {
     service: 'unit-test-service',
-    provider: {},
+    provider: {
+      environment: {
+        ooga: 'booga',
+      },
+    },
     functions: {
       function1: {},
       function2: {},
@@ -29,6 +33,8 @@ const serverlessStub = {
     },
   }),
 };
+
+const providerEnvironment = serverlessStub.service.provider.environment;
 
 describe('serverless-fetch-stack-resource', () => {
   describe('constructor', () => {
@@ -209,7 +215,7 @@ describe('serverless-fetch-stack-resource', () => {
 
   describe('updateFunctionEnv', () => {
     it('Uses aws sdk to update a function\'s env settings', () => {
-      const resources = { CF_a: '1', CF_b: '2', CF_c: '3' };
+      const resources = _.extend({}, providerEnvironment, { CF_a: '1', CF_b: '2', CF_c: '3' });
       const instance = new ServerlessFetchStackResources(_.extend({}, serverlessStub));
       instance.lambda.updateFunctionConfiguration = (params, callback) => {
         expect(params).to.deep.equal({
@@ -258,10 +264,10 @@ describe('serverless-fetch-stack-resource', () => {
       sinon.stub(instance, 'createCFFile').returns(Promise.resolve(true));
       return instance.afterDeploy().then(() => {
         sinon.assert.calledOnce(instance.fetchCFResources);
-        sinon.assert.calledWith(instance.updateFunctionEnv, 'unit-test-service-dev-function1', mappedResources);
-        sinon.assert.calledWith(instance.updateFunctionEnv, 'unit-test-service-dev-function2', mappedResources);
-        sinon.assert.calledWith(instance.updateFunctionEnv, 'unit-test-service-dev-function3', {});
-        sinon.assert.calledWith(instance.updateFunctionEnv, 'unit-test-service-dev-function4', {});
+        sinon.assert.calledWith(instance.updateFunctionEnv, 'unit-test-service-dev-function1', _.extend({}, mappedResources, providerEnvironment));
+        sinon.assert.calledWith(instance.updateFunctionEnv, 'unit-test-service-dev-function2', _.extend({}, mappedResources, providerEnvironment));
+        sinon.assert.calledWith(instance.updateFunctionEnv, 'unit-test-service-dev-function3', _.extend({}, providerEnvironment));
+        sinon.assert.calledWith(instance.updateFunctionEnv, 'unit-test-service-dev-function4', _.extend({}, providerEnvironment));
         return true;
       });
     });
@@ -290,7 +296,7 @@ describe('serverless-fetch-stack-resource', () => {
         sinon.assert.calledWith(
             instance.updateFunctionEnv,
             'unit-test-service-dev-function1',
-            _.extend({}, mappedResources, { custom1: 'value1' }));
+            _.extend({}, mappedResources, providerEnvironment, { custom1: 'value1' }));
         return true;
       });
     });
