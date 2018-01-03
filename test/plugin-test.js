@@ -134,10 +134,10 @@ describe('serverless-fetch-stack-resource', () => {
         { LogicalResourceId: 'b', PhysicalResourceId: '2' },
         { LogicalResourceId: 'c', PhysicalResourceId: '3' },
       ];
-      instance.cloudFormation.describeStackResources =
+      instance.cloudFormation.listStackResources =
           (params, callback) => {
             callback(null, {
-              StackResources: resources,
+              StackResourceSummaries: resources,
             });
           };
 
